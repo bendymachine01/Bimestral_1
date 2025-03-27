@@ -1,93 +1,101 @@
 import pygame
-
 from random import randint
 
+# Inicializar pygame
 pygame.init()
 
+# Configuración de la ventana
 ANCHURA_VENTANA = 600
 ALTURA_VENTANA = 600
-
 COLOR_FONDO = (255, 255, 250)
-PANTALLA = pygame.display.set_mode((ALTURA_VENTANA, ANCHURA_VENTANA))
+PANTALLA = pygame.display.set_mode((ANCHURA_VENTANA, ALTURA_VENTANA))
+pygame.display.set_caption("PRIMER JUEGO")
 
-# buleano de gestión del bucle
-PARAR_JUEGO = False
-
-# Variables COHETE
-XX_COHETE = 210
-YY_COHETE = 300
+# Variables del cohete
+XX_COHETE = 250
+YY_COHETE = 500
+MOVIMIENTO_XX_COHETE = 0
+VEL_COHETE = 4
 ALTURA_COHETE = 88
 ANCHURA_COHETE = 175
-MOVIMIENTO_XX_COHETE = 0
 
-# Variables PLANETAS
-XX_PLANETA = randint(30, 130)
-YY_PLANETA = 20
+# Variables de los planetas
 ALTURA_PLANETA = 111
 ANCHURA_PLANETA = 80
-XX_ENTRE_PLANETAS = 350
-YY_ENTRE_PLANETA = 125
-VELOCIDAD_PLANETAS = 1
+VELOCIDAD_PLANETAS = 2
 
-# Puntos y otros
+# Función para generar planetas en posiciones aleatorias
+def generar_planeta():
+    return randint(30, 150), randint(-200, -50)
+
+XX_PLANETA_IZQUIERDO, YY_PLANETA_IZQUIERDO = generar_planeta()
+XX_PLANETA_DERECHO, YY_PLANETA_DERECHO = generar_planeta()
+XX_ENTRE_PLANETAS = 350  # Separación entre planetas
+
+# Puntos y marcador
 PUNTOS = 0
-FUENTE = pygame.font.Font(None, 24)
+FUENTE = pygame.font.Font(None, 36)
 MARCADOR = FUENTE.render("0 puntos", 1, (255, 0, 0))
 
-# IMAGES
+# Cargar imágenes
 IMG_COHETE = pygame.image.load("img/COHETE.png")
-IMG_PLANETA_IZQUIERDO = pygame.image.load("img/PLANETA.png")
-IMG_PLANETA_DERECHO = pygame.image.load("img/PLANETA.png")
+IMG_PLANETA = pygame.image.load("img/PLANETA.png")
 
-pygame.display.set_caption("PRIMER JUEGO")
+# Bucle del juego
+PARAR_JUEGO = False
+reloj = pygame.time.Clock()
 
 while not PARAR_JUEGO:
     for event in pygame.event.get():
-
+        if event.type == pygame.QUIT:
+            PARAR_JUEGO = True
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 PARAR_JUEGO = True
             if event.key == pygame.K_RIGHT:
-                MOVIMIENTO_XX_COHETE = 4
-        elif event.type == pygame.KEYUP:
-            MOVIMIENTO_XX_COHETE = -4
+                MOVIMIENTO_XX_COHETE = VEL_COHETE
+            if event.key == pygame.K_LEFT:
+                MOVIMIENTO_XX_COHETE = -VEL_COHETE
+        if event.type == pygame.KEYUP:
+            MOVIMIENTO_XX_COHETE = 0  # Detener el movimiento al soltar la tecla
 
-        if XX_COHETE < -10 or XX_COHETE > ALTURA_VENTANA:
-            PARAR_JUEGO = True
+    # Mover el cohete dentro de los límites de la pantalla
+    XX_COHETE += MOVIMIENTO_XX_COHETE
+    XX_COHETE = max(0, min(XX_COHETE, ANCHURA_VENTANA - ANCHURA_COHETE))
 
+    # Mover los planetas hacia abajo
+    YY_PLANETA_IZQUIERDO += VELOCIDAD_PLANETAS
+    YY_PLANETA_DERECHO += VELOCIDAD_PLANETAS
+
+    # Reiniciar los planetas si salen de la pantalla
+    if YY_PLANETA_IZQUIERDO > ALTURA_VENTANA:
+        XX_PLANETA_IZQUIERDO, YY_PLANETA_IZQUIERDO = generar_planeta()
+        PUNTOS += 1  # Sumar puntos
+    if YY_PLANETA_DERECHO > ALTURA_VENTANA:
+        XX_PLANETA_DERECHO, YY_PLANETA_DERECHO = generar_planeta()
+        PUNTOS += 1
+
+    # Detección de colisiones con ambos planetas
+    def colision(XX_PLANETA, YY_PLANETA):
+        return (XX_COHETE < XX_PLANETA + ANCHURA_PLANETA and
+                XX_COHETE + ANCHURA_COHETE > XX_PLANETA and
+                YY_COHETE < YY_PLANETA + ALTURA_PLANETA and
+                YY_COHETE + ALTURA_COHETE > YY_PLANETA)
+
+    if colision(XX_PLANETA_IZQUIERDO, YY_PLANETA_IZQUIERDO) or colision(XX_PLANETA_DERECHO + XX_ENTRE_PLANETAS, YY_PLANETA_DERECHO):
+        PARAR_JUEGO = True
+
+    # Dibujar elementos en la pantalla
     PANTALLA.fill(COLOR_FONDO)
-
-    PANTALLA.blit(IMG_PLANETA_IZQUIERDO, (XX_PLANETA, YY_PLANETA))
-    PANTALLA.blit(IMG_PLANETA_DERECHO, (XX_PLANETA + XX_ENTRE_PLANETAS, YY_PLANETA + YY_ENTRE_PLANETA))
-
-    YY_PLANETA = YY_PLANETA + VELOCIDAD_PLANETAS
-
-    if YY_PLANETA > ANCHURA_VENTANA:
-        XX_PLANETA = randint(55, 150)
-        YY_PLANETA = 25
-        PUNTOS = PUNTOS + 1
-        MARCADOR = FUENTE.render(str(PUNTOS) + " puntos", 1, (255, 0, 0))
-
-    # PLANETA IZQUIERDO COLISION
-    PUNTO_INFERIOR_DERECHO_PRIMER_PLANETA_X = XX_PLANETA + ALTURA_PLANETA
-    PUNTO_INFERIOR_DERECHO_PRIMER_PLANETA_Y = YY_PLANETA + ANCHURA_PLANETA
-
-    if PUNTO_INFERIOR_DERECHO_PRIMER_PLANETA_X > XX_COHETE:
-        if PUNTO_INFERIOR_DERECHO_PRIMER_PLANETA_Y > YY_COHETE:
-            if PUNTO_INFERIOR_DERECHO_PRIMER_PLANETA_Y < YY_COHETE + ANCHURA_COHETE:
-                PARAR_JUEGO = True
-
-    # PLANETA DERECHO COLISION
-    PUNTO_INFERIOR_IZQUIERDO_SEGUNDO_PLANETA_X = XX_PLANETA + XX_ENTRE_PLANETAS
-    PUNTO_INFERIOR_IZQUIERDO_SEGUNDO_PLANETA_Y = YY_PLANETA + \
-        YY_ENTRE_PLANETA + ANCHURA_PLANETA
-
-    if XX_COHETE + ALTURA_COHETE > PUNTO_INFERIOR_IZQUIERDO_SEGUNDO_PLANETA_X:
-        if XX_COHETE < PUNTO_INFERIOR_IZQUIERDO_SEGUNDO_PLANETA_Y:
-            if XX_COHETE + ANCHURA_COHETE > PUNTO_INFERIOR_IZQUIERDO_SEGUNDO_PLANETA_Y:
-                PARAR_JUEGO = True
-
-    XX_COHETE = XX_COHETE + MOVIMIENTO_XX_COHETE
-    PANTALLA.blit(MARCADOR, (20, 580))
+    PANTALLA.blit(IMG_PLANETA, (XX_PLANETA_IZQUIERDO, YY_PLANETA_IZQUIERDO))
+    PANTALLA.blit(IMG_PLANETA, (XX_PLANETA_DERECHO + XX_ENTRE_PLANETAS, YY_PLANETA_DERECHO))
     PANTALLA.blit(IMG_COHETE, (XX_COHETE, YY_COHETE))
+
+    # Mostrar puntos en la pantalla
+    MARCADOR = FUENTE.render(f"{PUNTOS} puntos", 1, (255, 0, 0))
+    PANTALLA.blit(MARCADOR, (20, 20))
+
     pygame.display.update()
+    reloj.tick(60)  # Mantener 60 FPS
+
+pygame.quit()
