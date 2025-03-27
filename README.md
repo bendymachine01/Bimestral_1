@@ -173,3 +173,7 @@ Cuando el juego termina, se cierra Pygame.
 ## Objetivo del Juego
 El objetivo es esquivar los planetas y sobrevivir el mayor tiempo posible, acumulando puntos cada vez que un planeta desaparece y reaparece en la pantalla.
 
+# Diagrama de flujo
+
+![Diagrama de Flujo](Diagrma.png)
+
